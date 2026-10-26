@@ -4,9 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PDF Image Editor7</title>
-
-<script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<title>JPG Image Editor</title>
 
 <style>
 * {
@@ -14,136 +12,131 @@
 }
 
 body {
-    font-family: Arial, sans-serif;
-    background: #f2f5fa;
     margin: 0;
-    padding: 20px;
-    color: #222;
+    padding: 16px;
+    font-family: Arial, sans-serif;
+    background: #f1f5f9;
+    color: #172033;
 }
 
 .container {
-    max-width: 950px;
+    max-width: 850px;
     margin: auto;
-    background: white;
-    padding: 24px;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,.1);
 }
 
 h1 {
     text-align: center;
-    color: #174ea6;
+    color: #1d4ed8;
+    font-size: 27px;
+}
+
+.description {
+    text-align: center;
+    color: #475569;
+    line-height: 1.6;
+}
+
+.card {
+    background: white;
+    padding: 16px;
+    margin: 16px 0;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px #00000010;
 }
 
 h2 {
-    color: #174ea6;
-    font-size: 20px;
+    font-size: 19px;
+    margin-top: 0;
 }
 
-.step {
-    border: 1px solid #ddd;
-    padding: 18px;
-    margin: 20px 0;
-    border-radius: 8px;
-}
-
-label {
+input[type="file"] {
     display: block;
-    font-weight: bold;
-    margin: 12px 0 7px;
-}
-
-input[type="file"],
-input[type="number"] {
     width: 100%;
+    margin: 12px 0;
     padding: 10px;
-    border: 1px solid #bbb;
-    border-radius: 5px;
-}
-
-input[type="number"] {
-    margin-bottom: 12px;
-}
-
-button {
-    padding: 11px 17px;
-    border: none;
-    border-radius: 5px;
-    background: #1769d2;
-    color: white;
-    cursor: pointer;
-    margin: 6px 4px 6px 0;
-    font-size: 15px;
-}
-
-button:hover {
-    background: #0d4fa8;
-}
-
-button:disabled {
-    background: #999;
-    cursor: not-allowed;
-}
-
-.preview {
-    width: 100%;
-    height: 380px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    margin-top: 12px;
-    background: #f8f8f8;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #f8fafc;
 }
 
 .image-preview {
     display: block;
     max-width: 100%;
-    max-height: 300px;
-    margin-top: 12px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+    max-height: 250px;
+    margin: 12px auto 0;
+    border-radius: 8px;
+    object-fit: contain;
 }
 
-.note {
-    color: #555;
-    font-size: 14px;
-}
-
-.status {
-    margin-top: 12px;
-    font-weight: bold;
-    overflow-wrap: anywhere;
-}
-
-.success {
-    color: #16803c;
-}
-
-.error {
-    color: #c62828;
-}
-
-.row {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 15px;
-}
-
-[hidden] {
+.hidden {
     display: none !important;
 }
 
-@media (max-width: 600px) {
-    body {
-        padding: 10px;
-    }
+.instruction {
+    background: #eff6ff;
+    padding: 12px;
+    border-radius: 8px;
+    line-height: 1.7;
+    font-size: 14px;
+}
 
-    .container {
-        padding: 14px;
-    }
+.canvas-wrap {
+    width: 100%;
+    overflow: hidden;
+    background: #e2e8f0;
+    border-radius: 8px;
+    text-align: center;
+}
 
-    .row {
-        grid-template-columns: 1fr;
-    }
+canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+#editorCanvas {
+    touch-action: none;
+    cursor: grab;
+}
+
+button {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 9px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.download {
+    background: #16a34a;
+    color: white;
+}
+
+.reset {
+    background: #e2e8f0;
+    color: #172033;
+}
+
+button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.status {
+    text-align: center;
+    color: #b91c1c;
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+footer {
+    text-align: center;
+    font-size: 12px;
+    color: #64748b;
+    margin: 20px 0;
 }
 </style>
 </head>
@@ -151,394 +144,580 @@ button:disabled {
 <body>
 <div class="container">
 
-<h1>PDF Image Editor</h1>
+    <h1>JPG Image Editor</h1>
+    <p class="description">
+        Select two JPG images, position and resize the second image,
+        preview your result, and download the combined JPG.
+    </p>
 
-<p class="note">
-Select a PDF document and an image. Preview both files, position
-the image, and create your edited PDF.
-</p>
+    <section class="card">
+        <h2>1. Select First JPG — Background</h2>
 
-<!-- STEP 1: ASK USER FOR PDF AND IMAGE -->
+        <input
+            type="file"
+            id="backgroundFile"
+            accept=".jpg,.jpeg,image/jpeg"
+        >
 
-<div class="step">
-<h2>Step 1: Select PDF and Image</h2>
+        <p id="backgroundMessage">No background image selected.</p>
 
-<label for="pdfFile">Choose PDF document</label>
-<input type="file" id="pdfFile" accept=".pdf,application/pdf">
+        <img
+            id="backgroundPreview"
+            class="image-preview hidden"
+            alt="Selected background image preview"
+        >
+    </section>
 
-<div id="pdfPreviewStep" hidden>
-    <h3>PDF Preview</h3>
-    <iframe id="originalPreview"
-            class="preview"
-            title="Original PDF preview"></iframe>
-</div>
+    <section class="card">
+        <h2>2. Select Second JPG — Overlay</h2>
 
-<label for="imageFile">Choose image (JPG, JPEG or PNG)</label>
-<input type="file" id="imageFile"
-       accept=".jpg,.jpeg,.png,image/jpeg,image/png">
+        <input
+            type="file"
+            id="overlayFile"
+            accept=".jpg,.jpeg,image/jpeg"
+        >
 
-<div id="imagePreviewStep" hidden>
-    <h3>Image Preview</h3>
-    <img id="imagePreview"
-         class="image-preview"
-         alt="Selected image preview">
-</div>
+        <p id="overlayMessage">No second image selected.</p>
 
-<p id="fileStatus" class="status">
-Please select a PDF and an image.
-</p>
-</div>
+        <img
+            id="overlayPreview"
+            class="image-preview hidden"
+            alt="Selected second image preview"
+        >
+    </section>
 
-<!-- STEP 2: IMAGE POSITION AND SIZE -->
+    <section class="card">
+        <h2>3. Adjust Your Image</h2>
 
-<div class="step">
-<h2>Step 2: Set Image Position and Size</h2>
+        <div class="instruction">
+            <strong>On your phone:</strong><br>
+            ☝️ Drag with one finger to move the second image.<br>
+            🤏 Pinch with two fingers to resize it.<br>
+            The first image stays as the background.
+        </div>
 
-<p class="note">
-Coordinates are measured in PDF points from the bottom-left
-corner of the first page.
-</p>
+        <div class="canvas-wrap" style="margin-top: 14px;">
+            <canvas id="editorCanvas"></canvas>
+        </div>
 
-<div class="row">
-    <div>
-        <label for="xPosition">X position</label>
-        <input type="number" id="xPosition" value="50" min="0">
-    </div>
+        <p style="font-size:13px;color:#64748b;">
+            The dashed border shows the second image's editing area.
+            It will not appear in your downloaded JPG.
+        </p>
+    </section>
 
-    <div>
-        <label for="yPosition">Y position</label>
-        <input type="number" id="yPosition" value="50" min="0">
-    </div>
+    <section class="card">
+        <h2>4. Confirm Final Image</h2>
 
-    <div>
-        <label for="imageWidth">Image width</label>
-        <input type="number" id="imageWidth" value="150" min="1">
-    </div>
+        <p>
+            This is the clean preview of your combined image.
+            It updates when you move or resize the second image.
+        </p>
 
-    <div>
-        <label for="imageHeight">Image height</label>
-        <input type="number" id="imageHeight" value="100" min="1">
-    </div>
-</div>
+        <div class="canvas-wrap">
+            <canvas id="finalCanvas"></canvas>
+        </div>
 
-<button id="addImageBtn" disabled>Add Image to PDF</button>
-</div>
+        <button
+            id="downloadButton"
+            class="download"
+            disabled
+        >
+            Download Combined JPG
+        </button>
 
-<!-- STEP 3: EDITED PDF PREVIEW -->
+        <button
+            id="resetButton"
+            class="reset"
+            disabled
+        >
+            Reset Second Image Position
+        </button>
 
-<div class="step">
-<h2>Step 3: Preview and Download</h2>
+        <p id="status" class="status" aria-live="polite"></p>
+    </section>
 
-<iframe id="editedPreview"
-        class="preview"
-        title="Edited PDF preview"></iframe>
-
-<p id="editStatus" class="status">
-Your edited PDF will appear here.
-</p>
-
-<button id="openPdfBtn" disabled>Open PDF in New Tab</button>
-<button id="downloadBtn" disabled>Download Edited PDF</button>
-</div>
+    <footer>
+        Your images are processed in your browser.
+    </footer>
 
 </div>
 
 <script>
-const pdfInput = document.getElementById("pdfFile");
-const imageInput = document.getElementById("imageFile");
+"use strict";
 
-const pdfPreviewStep = document.getElementById("pdfPreviewStep");
-const originalPreview = document.getElementById("originalPreview");
+const backgroundFile = document.getElementById("backgroundFile");
+const overlayFile = document.getElementById("overlayFile");
 
-const imagePreviewStep = document.getElementById("imagePreviewStep");
-const imagePreview = document.getElementById("imagePreview");
+const backgroundPreview = document.getElementById("backgroundPreview");
+const overlayPreview = document.getElementById("overlayPreview");
 
-const fileStatus = document.getElementById("fileStatus");
-const editStatus = document.getElementById("editStatus");
+const backgroundMessage = document.getElementById("backgroundMessage");
+const overlayMessage = document.getElementById("overlayMessage");
 
-const addImageBtn = document.getElementById("addImageBtn");
-const openPdfBtn = document.getElementById("openPdfBtn");
-const downloadBtn = document.getElementById("downloadBtn");
-const editedPreview = document.getElementById("editedPreview");
+const editorCanvas = document.getElementById("editorCanvas");
+const finalCanvas = document.getElementById("finalCanvas");
 
-let pdfBytes = null;
-let imageBytes = null;
-let imageType = null;
+const editorCtx = editorCanvas.getContext("2d");
+const finalCtx = finalCanvas.getContext("2d");
 
-let originalPdfUrl = null;
-let imageUrl = null;
-let editedPdfUrl = null;
-let editedPdfBytes = null;
+const downloadButton = document.getElementById("downloadButton");
+const resetButton = document.getElementById("resetButton");
+const statusMessage = document.getElementById("status");
 
-function showStatus(element, message, error = false) {
-    element.textContent = message;
-    element.className = "status " + (error ? "error" : "success");
+let backgroundImage = null;
+let overlayImage = null;
+
+let backgroundURL = null;
+let overlayURL = null;
+
+let overlay = {
+    x: 0,
+    y: 0,
+    width: 0,
+    height: 0
+};
+
+let initialOverlay = null;
+let overlayInitialized = false;
+
+const activePointers = new Map();
+
+let dragPointerId = null;
+let dragStart = null;
+let pinchStart = null;
+
+function showStatus(message, isError = false) {
+    statusMessage.textContent = message;
+    statusMessage.style.color = isError ? "#b91c1c" : "#166534";
 }
 
-function updateButton() {
-    addImageBtn.disabled = !(pdfBytes && imageBytes);
+function isJPG(file) {
+    return file && (
+        file.type === "image/jpeg" ||
+        /\.(jpg|jpeg)$/i.test(file.name)
+    );
 }
 
-function clearEditedPdf() {
-    if (editedPdfUrl) {
-        URL.revokeObjectURL(editedPdfUrl);
-    }
-
-    editedPdfUrl = null;
-    editedPdfBytes = null;
-    editedPreview.removeAttribute("src");
-
-    openPdfBtn.disabled = true;
-    downloadBtn.disabled = true;
-
-    editStatus.textContent = "Your edited PDF will appear here.";
-    editStatus.className = "status";
+function clearCanvas(canvas, context) {
+    context.clearRect(0, 0, canvas.width, canvas.height);
 }
 
-function clearPdfPreview() {
-    if (originalPdfUrl) {
-        URL.revokeObjectURL(originalPdfUrl);
-    }
+function setCanvasSize() {
+    if (!backgroundImage) return;
 
-    originalPdfUrl = null;
-    originalPreview.removeAttribute("src");
-    pdfPreviewStep.hidden = true;
+    editorCanvas.width = backgroundImage.naturalWidth;
+    editorCanvas.height = backgroundImage.naturalHeight;
+
+    finalCanvas.width = backgroundImage.naturalWidth;
+    finalCanvas.height = backgroundImage.naturalHeight;
 }
 
-function clearImagePreview() {
-    if (imageUrl) {
-        URL.revokeObjectURL(imageUrl);
-    }
+function initializeOverlay() {
+    if (!backgroundImage || !overlayImage) return;
 
-    imageUrl = null;
-    imagePreview.removeAttribute("src");
-    imagePreviewStep.hidden = true;
+    // Initially make the second image 35% of the background width.
+    const width = backgroundImage.naturalWidth * 0.35;
+    const aspectRatio =
+        overlayImage.naturalHeight / overlayImage.naturalWidth;
+
+    const height = width * aspectRatio;
+
+    overlay.width = width;
+    overlay.height = height;
+
+    overlay.x = (backgroundImage.naturalWidth - width) / 2;
+    overlay.y = (backgroundImage.naturalHeight - height) / 2;
+
+    overlayInitialized = true;
+
+    initialOverlay = { ...overlay };
+
+    drawAll();
 }
 
-// STEP 1A: SELECT AND PREVIEW PDF
-
-pdfInput.addEventListener("change", async function () {
-    const file = pdfInput.files[0];
-
-    pdfBytes = null;
-    clearEditedPdf();
-    clearPdfPreview();
-
-    if (!file) {
-        updateButton();
+function drawFinalImage() {
+    if (!backgroundImage) {
+        clearCanvas(finalCanvas, finalCtx);
         return;
     }
 
-    if (!file.name.toLowerCase().endsWith(".pdf")) {
-        showStatus(fileStatus, "Please choose a PDF file.", true);
-        pdfInput.value = "";
-        updateButton();
-        return;
-    }
+    finalCtx.clearRect(
+        0, 0, finalCanvas.width, finalCanvas.height
+    );
 
-    try {
-        const buffer = await file.arrayBuffer();
-        pdfBytes = new Uint8Array(buffer);
+    finalCtx.drawImage(
+        backgroundImage,
+        0,
+        0,
+        finalCanvas.width,
+        finalCanvas.height
+    );
 
-        originalPdfUrl = URL.createObjectURL(
-            new Blob([pdfBytes], { type: "application/pdf" })
+    if (overlayImage && overlayInitialized) {
+        finalCtx.drawImage(
+            overlayImage,
+            overlay.x,
+            overlay.y,
+            overlay.width,
+            overlay.height
         );
-
-        originalPreview.src = originalPdfUrl;
-        pdfPreviewStep.hidden = false;
-
-        showStatus(fileStatus, "PDF selected: " + file.name);
-    } catch (error) {
-        pdfBytes = null;
-        showStatus(fileStatus, "Unable to read the PDF file.", true);
     }
+}
 
-    updateButton();
-});
-
-// STEP 1B: SELECT AND PREVIEW IMAGE
-
-imageInput.addEventListener("change", async function () {
-    const file = imageInput.files[0];
-
-    imageBytes = null;
-    imageType = null;
-
-    clearEditedPdf();
-    clearImagePreview();
-
-    if (!file) {
-        updateButton();
+function drawEditor() {
+    if (!backgroundImage) {
+        clearCanvas(editorCanvas, editorCtx);
         return;
     }
 
-    const extension = file.name.split(".").pop().toLowerCase();
+    editorCtx.clearRect(
+        0, 0, editorCanvas.width, editorCanvas.height
+    );
 
-    if (!["jpg", "jpeg", "png"].includes(extension)) {
-        showStatus(
-            fileStatus,
-            "Please choose a JPG, JPEG or PNG image.",
-            true
-        );
+    editorCtx.drawImage(
+        backgroundImage,
+        0,
+        0,
+        editorCanvas.width,
+        editorCanvas.height
+    );
 
-        imageInput.value = "";
-        updateButton();
+    if (!overlayImage || !overlayInitialized) return;
+
+    editorCtx.drawImage(
+        overlayImage,
+        overlay.x,
+        overlay.y,
+        overlay.width,
+        overlay.height
+    );
+
+    // Editing border only; it is never drawn on the final image.
+    editorCtx.save();
+
+    editorCtx.strokeStyle = "#2563eb";
+    editorCtx.lineWidth = Math.max(
+        2,
+        backgroundImage.naturalWidth / 400
+    );
+    editorCtx.setLineDash([
+        Math.max(5, backgroundImage.naturalWidth / 100),
+        Math.max(3, backgroundImage.naturalWidth / 200)
+    ]);
+
+    editorCtx.strokeRect(
+        overlay.x,
+        overlay.y,
+        overlay.width,
+        overlay.height
+    );
+
+    editorCtx.restore();
+}
+
+function drawAll() {
+    drawEditor();
+    drawFinalImage();
+
+    downloadButton.disabled =
+        !(backgroundImage && overlayImage && overlayInitialized);
+
+    resetButton.disabled =
+        !(backgroundImage && overlayImage && overlayInitialized);
+}
+
+// Load the first JPG.
+backgroundFile.addEventListener("change", function () {
+    const file = this.files[0];
+
+    if (!file) return;
+
+    if (!isJPG(file)) {
+        showStatus("Please select a JPG or JPEG image.", true);
+        this.value = "";
         return;
     }
 
-    try {
-        imageBytes = new Uint8Array(await file.arrayBuffer());
+    if (backgroundURL) URL.revokeObjectURL(backgroundURL);
 
-        imageType = extension === "png" ? "png" : "jpg";
+    backgroundURL = URL.createObjectURL(file);
 
-        imageUrl = URL.createObjectURL(file);
-        imagePreview.src = imageUrl;
-        imagePreviewStep.hidden = false;
+    const image = new Image();
 
-        showStatus(fileStatus, "Image selected: " + file.name);
-    } catch (error) {
-        imageBytes = null;
-        imageType = null;
+    image.onload = function () {
+        backgroundImage = image;
 
-        showStatus(fileStatus, "Unable to read the image.", true);
-    }
+        backgroundPreview.src = backgroundURL;
+        backgroundPreview.classList.remove("hidden");
 
-    updateButton();
-});
+        backgroundMessage.textContent =
+            "Background selected: " + file.name;
 
-// STEP 2: ADD IMAGE TO THE FIRST PDF PAGE
+        setCanvasSize();
 
-addImageBtn.addEventListener("click", async function () {
-    if (!pdfBytes || !imageBytes) {
-        showStatus(
-            fileStatus,
-            "Please select both a PDF and an image.",
-            true
-        );
-        return;
-    }
+        overlayInitialized = false;
+        initialOverlay = null;
 
-    addImageBtn.disabled = true;
-    clearEditedPdf();
-
-    showStatus(editStatus, "Adding image to PDF...");
-
-    try {
-        const { PDFDocument } = PDFLib;
-
-        const pdfDoc = await PDFDocument.load(pdfBytes);
-
-        let embeddedImage;
-
-        if (imageType === "png") {
-            embeddedImage = await pdfDoc.embedPng(imageBytes);
+        if (overlayImage) {
+            initializeOverlay();
         } else {
-            embeddedImage = await pdfDoc.embedJpg(imageBytes);
+            drawAll();
         }
 
-        if (pdfDoc.getPageCount() === 0) {
-            throw new Error("The PDF does not contain any pages.");
-        }
+        showStatus("First JPG selected successfully.");
+    };
 
-        const page = pdfDoc.getPage(0);
+    image.onerror = function () {
+        showStatus("Could not open the background image.", true);
+    };
 
-        const x = Number(document.getElementById("xPosition").value);
-        const y = Number(document.getElementById("yPosition").value);
-        const width = Number(document.getElementById("imageWidth").value);
-        const height = Number(document.getElementById("imageHeight").value);
+    image.src = backgroundURL;
+});
 
-        if (
-            ![x, y, width, height].every(Number.isFinite) ||
-            x < 0 || y < 0 || width <= 0 || height <= 0
-        ) {
-            throw new Error("Enter valid position and size values.");
-        }
+// Load the second JPG.
+overlayFile.addEventListener("change", function () {
+    const file = this.files[0];
 
-        const pageSize = page.getSize();
+    if (!file) return;
 
-        if (
-            x + width > pageSize.width ||
-            y + height > pageSize.height
-        ) {
-            throw new Error(
-                "The image is outside the page. Reduce its position or size."
+    if (!isJPG(file)) {
+        showStatus("Please select a JPG or JPEG image.", true);
+        this.value = "";
+        return;
+    }
+
+    if (overlayURL) URL.revokeObjectURL(overlayURL);
+
+    overlayURL = URL.createObjectURL(file);
+
+    const image = new Image();
+
+    image.onload = function () {
+        overlayImage = image;
+
+        overlayPreview.src = overlayURL;
+        overlayPreview.classList.remove("hidden");
+
+        overlayMessage.textContent =
+            "Second image selected: " + file.name;
+
+        overlayInitialized = false;
+
+        if (backgroundImage) {
+            initializeOverlay();
+        } else {
+            showStatus(
+                "Second JPG selected. Now select the first JPG."
             );
         }
+    };
 
-        page.drawImage(embeddedImage, {
-            x: x,
-            y: y,
-            width: width,
-            height: height
-        });
+    image.onerror = function () {
+        showStatus("Could not open the second image.", true);
+    };
 
-        editedPdfBytes = await pdfDoc.save();
-
-        editedPdfUrl = URL.createObjectURL(
-            new Blob([editedPdfBytes], { type: "application/pdf" })
-        );
-
-        editedPreview.src = editedPdfUrl;
-
-        showStatus(
-            editStatus,
-            "Success! The image has been added to the PDF."
-        );
-
-        openPdfBtn.disabled = false;
-        downloadBtn.disabled = false;
-
-    } catch (error) {
-        showStatus(
-            editStatus,
-            "Error: " + (error.message || "Unable to edit PDF."),
-            true
-        );
-    } finally {
-        updateButton();
-    }
+    image.src = overlayURL;
 });
 
-// OPEN EDITED PDF IN A NEW TAB
+// Convert finger/mouse coordinates to original image coordinates.
+function getCanvasPoint(event) {
+    const rect = editorCanvas.getBoundingClientRect();
 
-openPdfBtn.addEventListener("click", function () {
-    if (editedPdfUrl) {
-        window.open(editedPdfUrl, "_blank");
-    }
-});
+    return {
+        x: (event.clientX - rect.left) *
+            (editorCanvas.width / rect.width),
 
-// DOWNLOAD EDITED PDF
+        y: (event.clientY - rect.top) *
+            (editorCanvas.height / rect.height)
+    };
+}
 
-downloadBtn.addEventListener("click", function () {
-    if (!editedPdfBytes) {
+function distance(pointA, pointB) {
+    const dx = pointB.x - pointA.x;
+    const dy = pointB.y - pointA.y;
+
+    return Math.sqrt(dx * dx + dy * dy);
+}
+
+function midpoint(pointA, pointB) {
+    return {
+        x: (pointA.x + pointB.x) / 2,
+        y: (pointA.y + pointB.y) / 2
+    };
+}
+
+function pointInsideOverlay(point) {
+    return (
+        point.x >= overlay.x &&
+        point.x <= overlay.x + overlay.width &&
+        point.y >= overlay.y &&
+        point.y <= overlay.y + overlay.height
+    );
+}
+
+// Start moving or pinching.
+editorCanvas.addEventListener("pointerdown", function (event) {
+    if (!backgroundImage || !overlayInitialized) return;
+
+    event.preventDefault();
+
+    editorCanvas.setPointerCapture(event.pointerId);
+
+    const point = getCanvasPoint(event);
+
+    activePointers.set(event.pointerId, point);
+
+    if (activePointers.size === 2) {
+        const points = Array.from(activePointers.values());
+
+        pinchStart = {
+            distance: Math.max(distance(points[0], points[1]), 1),
+            midpoint: midpoint(points[0], points[1]),
+            overlay: { ...overlay }
+        };
+
+        dragPointerId = null;
+        dragStart = null;
         return;
     }
 
-    const blob = new Blob([editedPdfBytes], {
-        type: "application/pdf"
-    });
+    if (activePointers.size === 1 && pointInsideOverlay(point)) {
+        dragPointerId = event.pointerId;
 
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-
-    link.href = url;
-    link.download = "edited-document.pdf";
-
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-
-    setTimeout(function () {
-        URL.revokeObjectURL(url);
-    }, 1000);
+        dragStart = {
+            point: point,
+            x: overlay.x,
+            y: overlay.y
+        };
+    }
 });
 
-// CLEAN UP PREVIEW URLS
+// Drag with one finger or pinch with two fingers.
+editorCanvas.addEventListener("pointermove", function (event) {
+    if (!activePointers.has(event.pointerId)) return;
 
-window.addEventListener("beforeunload", function () {
-    if (originalPdfUrl) URL.revokeObjectURL(originalPdfUrl);
-    if (imageUrl) URL.revokeObjectURL(imageUrl);
-    if (editedPdfUrl) URL.revokeObjectURL(editedPdfUrl);
+    event.preventDefault();
+
+    activePointers.set(event.pointerId, getCanvasPoint(event));
+
+    if (activePointers.size >= 2 && pinchStart) {
+        const points = Array.from(activePointers.values()).slice(0, 2);
+
+        const currentDistance = Math.max(
+            distance(points[0], points[1]),
+            1
+        );
+
+        const currentMidpoint = midpoint(points[0], points[1]);
+
+        const scale = currentDistance / pinchStart.distance;
+
+        // Preserve the second image's original aspect ratio.
+        const newWidth = Math.max(
+            10,
+            pinchStart.overlay.width * scale
+        );
+
+        const newHeight =
+            pinchStart.overlay.height *
+            (newWidth / pinchStart.overlay.width);
+
+        overlay.width = newWidth;
+        overlay.height = newHeight;
+
+        // Move the image with the midpoint of the two fingers.
+        overlay.x =
+            pinchStart.overlay.x +
+            currentMidpoint.x -
+            pinchStart.midpoint.x;
+
+        overlay.y =
+            pinchStart.overlay.y +
+            currentMidpoint.y -
+            pinchStart.midpoint.y;
+
+        drawAll();
+        return;
+    }
+
+    if (
+        activePointers.size === 1 &&
+        event.pointerId === dragPointerId &&
+        dragStart
+    ) {
+        const point = activePointers.get(event.pointerId);
+
+        overlay.x = dragStart.x + point.x - dragStart.point.x;
+        overlay.y = dragStart.y + point.y - dragStart.point.y;
+
+        drawAll();
+    }
+});
+
+function endPointer(event) {
+    activePointers.delete(event.pointerId);
+
+    if (activePointers.size < 2) {
+        pinchStart = null;
+    }
+
+    if (event.pointerId === dragPointerId) {
+        dragPointerId = null;
+        dragStart = null;
+    }
+}
+
+editorCanvas.addEventListener("pointerup", endPointer);
+editorCanvas.addEventListener("pointercancel", endPointer);
+editorCanvas.addEventListener("lostpointercapture", endPointer);
+
+// Reset the overlay to its initial size and position.
+resetButton.addEventListener("click", function () {
+    if (!initialOverlay) return;
+
+    overlay = { ...initialOverlay };
+
+    activePointers.clear();
+    dragPointerId = null;
+    dragStart = null;
+    pinchStart = null;
+
+    drawAll();
+    showStatus("Second image position has been reset.");
+});
+
+// Download the clean combined JPG.
+downloadButton.addEventListener("click", function () {
+    if (!backgroundImage || !overlayImage || !overlayInitialized) {
+        showStatus("Please select both JPG images first.", true);
+        return;
+    }
+
+    drawFinalImage();
+
+    finalCanvas.toBlob(function (blob) {
+        if (!blob) {
+            showStatus("Unable to create the JPG file.", true);
+            return;
+        }
+
+        const downloadURL = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+
+        link.href = downloadURL;
+        link.download = "combined-image.jpg";
+
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+
+        setTimeout(function () {
+            URL.revokeObjectURL(downloadURL);
+        }, 1000);
+
+        showStatus("Your combined JPG is ready to save.");
+    }, "image/jpeg", 0.95);
 });
 </script>
 
