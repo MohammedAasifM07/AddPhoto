@@ -8,27 +8,69 @@ html = r'''<!DOCTYPE html>
 <title>PDF Image Editor</title>
 <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 <style>
-  * { box-sizing: border-box; }
-  body { font-family: Arial, sans-serif; background: #f0f4f8; margin: 0; padding: 20px; color: #172033; }
-  .container { max-width: 700px; margin: auto; background: white; padding: 24px; border-radius: 12px; box-shadow: 0 3px 15px #0001; }
-  h1 { color: #1565c0; text-align: center; }
-  label { display: block; margin-top: 18px; font-weight: bold; }
-  input, select, button { box-sizing: border-box; width: 100%; margin-top: 8px; padding: 11px; font-size: 16px; border-radius: 6px; }
-  input, select { border: 1px solid #cbd5e1; }
-  button { background: #1565c0; color: white; border: 0; cursor: pointer; font-weight: bold; }
-  button:disabled { background: #999; cursor: not-allowed; }
-  .secondary { background: #334155; }
-  .button-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-  iframe { width: 100%; height: 420px; margin-top: 15px; border: 1px solid #ddd; border-radius: 6px; }
-  #imagePreview { display: none; max-width: 100%; max-height: 180px; margin: 15px auto; }
-  #imageStep, #editStep, #previewStep { display: none; }
-  #status { overflow-wrap: anywhere; margin-top: 15px; line-height: 1.5; }
-  .note { font-size: 13px; color: #64748b; line-height: 1.5; }
-  @media (max-width: 520px) {
-    .container { padding: 16px; }
-    .button-row { grid-template-columns: 1fr; }
-    iframe { height: 350px; }
-  }
+* { box-sizing: border-box; }
+body {
+  font-family: Arial, sans-serif;
+  background: #f0f4f8;
+  margin: 0;
+  padding: 20px;
+  color: #172033;
+}
+.container {
+  max-width: 700px;
+  margin: auto;
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 3px 15px #0001;
+}
+h1 { color: #1565c0; text-align: center; }
+label { display: block; margin-top: 18px; font-weight: bold; }
+input, select, button {
+  width: 100%;
+  margin-top: 8px;
+  padding: 11px;
+  font-size: 16px;
+  border-radius: 6px;
+}
+input, select { border: 1px solid #cbd5e1; }
+button {
+  background: #1565c0;
+  color: white;
+  border: 0;
+  cursor: pointer;
+  font-weight: bold;
+}
+button:disabled { background: #999; cursor: not-allowed; }
+.secondary { background: #334155; }
+.button-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 10px;
+}
+iframe {
+  width: 100%;
+  height: 420px;
+  margin-top: 15px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+#imagePreview {
+  display: none;
+  max-width: 100%;
+  max-height: 180px;
+  margin: 15px auto;
+}
+#imageStep, #editStep, #previewStep { display: none; }
+#status { overflow-wrap: anywhere; margin-top: 15px; line-height: 1.5; }
+.note { font-size: 13px; color: #64748b; line-height: 1.5; }
+#fallbackLink { display: none; margin-top: 12px; overflow-wrap: anywhere; }
+@media (max-width: 520px) {
+  .container { padding: 16px; }
+  .button-row { grid-template-columns: 1fr; }
+  iframe { height: 350px; }
+}
 </style>
 </head>
 <body>
@@ -70,16 +112,18 @@ html = r'''<!DOCTYPE html>
     <input type="number" id="imageHeight" min="1" max="500" value="40" step="1">
 
     <button id="addPhotoBtn" disabled>Add Photo to PDF</button>
-    <p class="note">Width and height are set independently. If they have different proportions from your original photo, the image may look stretched.</p>
+    <p class="note">Width and height are set independently, so the image may stretch if their proportions differ from the original photo.</p>
   </div>
 
   <div id="previewStep">
     <h2>Step 6: View your edited PDF</h2>
     <iframe id="editedPreview" title="Edited PDF preview"></iframe>
     <div class="button-row">
-      <button id="viewBtn" class="secondary">View PDF</button>
+      <button id="viewBtn" class="secondary">View PDF in New Tab</button>
       <button id="downloadBtn">Download PDF</button>
     </div>
+    <a id="fallbackLink" href="#" target="_blank" rel="noopener">Tap here to open the edited PDF</a>
+    <p class="note">If your browser does not display PDFs in the preview, use “View PDF in New Tab” or download the file.</p>
   </div>
 
   <p id="status" role="status" aria-live="polite"></p>
@@ -97,33 +141,38 @@ const addPhotoBtn = document.getElementById("addPhotoBtn");
 const viewBtn = document.getElementById("viewBtn");
 const downloadBtn = document.getElementById("downloadBtn");
 const editedPreview = document.getElementById("editedPreview");
+const fallbackLink = document.getElementById("fallbackLink");
 const status = document.getElementById("status");
 
 let pdfBytes = null;
 let imageBytes = null;
-let pageCount = 0;
 let editedPdfBytes = null;
 let editedPdfUrl = null;
-let originalPdfUrl = null;
 let imageUrl = null;
-
-function clearEditedPdf() {
-  editedPdfBytes = null;
-  if (editedPdfUrl) URL.revokeObjectURL(editedPdfUrl);
-  editedPdfUrl = null;
-  editedPreview.removeAttribute("src");
-  previewStep.style.display = "none";
-  downloadBtn.disabled = true;
-}
 
 function updateAddButton() {
   addPhotoBtn.disabled = !(pdfBytes && imageBytes);
 }
 
+function clearEditedPdf() {
+  editedPdfBytes = null;
+
+  if (editedPdfUrl) {
+    URL.revokeObjectURL(editedPdfUrl);
+  }
+
+  editedPdfUrl = null;
+  editedPreview.removeAttribute("src");
+  previewStep.style.display = "none";
+  downloadBtn.disabled = true;
+  fallbackLink.style.display = "none";
+  fallbackLink.removeAttribute("href");
+}
+
 pdfInput.addEventListener("change", async () => {
   const file = pdfInput.files[0];
+
   pdfBytes = null;
-  pageCount = 0;
   imageBytes = null;
   jpgInput.value = "";
   imageStep.style.display = "none";
@@ -132,65 +181,83 @@ pdfInput.addEventListener("change", async () => {
   clearEditedPdf();
   updateAddButton();
   status.textContent = "";
-  if (originalPdfUrl) URL.revokeObjectURL(originalPdfUrl);
+  pdfInfo.textContent = "Checking PDF...";
 
-  if (!file) return;
-  if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+  if (!file) {
+    pdfInfo.textContent = "Choose a PDF to begin.";
+    return;
+  }
+
+  if (file.type !== "application/pdf" &&
+      !file.name.toLowerCase().endsWith(".pdf")) {
+    pdfInfo.textContent = "Choose a PDF to begin.";
     status.textContent = "Please select a PDF file.";
     return;
   }
 
   try {
-    pdfBytes = await file.arrayBuffer();
-    const doc = await PDFLib.PDFDocument.load(pdfBytes.slice(0));
-    pageCount = doc.getPageCount();
+    const fileBytes = await file.arrayBuffer();
+    const doc = await PDFLib.PDFDocument.load(fileBytes.slice(0));
+    pdfBytes = fileBytes;
+
     const pageInput = document.getElementById("pageNumber");
-    pageInput.max = String(pageCount);
+    pageInput.max = String(doc.getPageCount());
     pageInput.value = "1";
 
-    originalPdfUrl = URL.createObjectURL(file);
-    pdfInfo.textContent = `PDF selected: ${pageCount} page(s). Now select your JPG image.`;
+    pdfInfo.textContent =
+      `PDF selected: ${doc.getPageCount()} page(s). Now select your JPG image.`;
     imageStep.style.display = "block";
-    status.textContent = "";
-    updateAddButton();
   } catch (error) {
     pdfBytes = null;
     pdfInfo.textContent = "Could not read this PDF.";
-    status.textContent = "Unable to read this PDF. Please choose a valid, unencrypted PDF.";
+    status.textContent =
+      "Unable to read the PDF. It may be invalid or password-protected.";
   }
+
+  updateAddButton();
 });
 
 jpgInput.addEventListener("change", async () => {
   const file = jpgInput.files[0];
+
   imageBytes = null;
   editStep.style.display = "none";
   imagePreview.style.display = "none";
   clearEditedPdf();
   updateAddButton();
   status.textContent = "";
-  if (imageUrl) URL.revokeObjectURL(imageUrl);
+
+  if (imageUrl) {
+    URL.revokeObjectURL(imageUrl);
+    imageUrl = null;
+  }
+
   if (!file) return;
 
-  if (file.type !== "image/jpeg" && !/\.(jpg|jpeg)$/i.test(file.name)) {
+  if (file.type !== "image/jpeg" &&
+      !/\.(jpg|jpeg)$/i.test(file.name)) {
     status.textContent = "Please select a JPG or JPEG image.";
     return;
   }
 
   try {
-    imageBytes = await file.arrayBuffer();
+    const fileBytes = await file.arrayBuffer();
     const bitmap = await createImageBitmap(file);
     bitmap.close();
+
+    imageBytes = fileBytes;
     imageUrl = URL.createObjectURL(file);
     imagePreview.src = imageUrl;
     imagePreview.style.display = "block";
     editStep.style.display = "block";
-    status.textContent = "JPG selected. Choose the page, position and size, then tap Add Photo to PDF.";
-    updateAddButton();
+    status.textContent =
+      "JPG selected. Choose the page, position and size.";
   } catch (error) {
     imageBytes = null;
-    status.textContent = "Unable to read this image. Please choose another JPG.";
-    updateAddButton();
+    status.textContent = "Unable to read this JPG image.";
   }
+
+  updateAddButton();
 });
 
 addPhotoBtn.addEventListener("click", async () => {
@@ -214,8 +281,10 @@ addPhotoBtn.addEventListener("click", async () => {
 
     const widthMm = Number(document.getElementById("imageWidth").value);
     const heightMm = Number(document.getElementById("imageHeight").value);
+
     if (!Number.isFinite(widthMm) || !Number.isFinite(heightMm) ||
-        widthMm <= 0 || heightMm <= 0 || widthMm > 500 || heightMm > 500) {
+        widthMm <= 0 || heightMm <= 0 ||
+        widthMm > 500 || heightMm > 500) {
       throw new Error("Image width and height must be between 1 and 500 mm.");
     }
 
@@ -226,7 +295,7 @@ addPhotoBtn.addEventListener("click", async () => {
     const height = heightMm * 72 / 25.4;
 
     if (width > pageWidth || height > pageHeight) {
-      throw new Error("Image size is larger than the selected PDF page. Reduce the width or height.");
+      throw new Error("Image is too large for this PDF page. Reduce its size.");
     }
 
     const jpg = await pdfDoc.embedJpg(imageBytes);
@@ -242,48 +311,73 @@ addPhotoBtn.addEventListener("click", async () => {
     else y = (pageHeight - height) / 2;
 
     page.drawImage(jpg, { x, y, width, height });
+
     editedPdfBytes = await pdfDoc.save();
-    editedPdfUrl = URL.createObjectURL(
-      new Blob([editedPdfBytes], { type: "application/pdf" })
-    );
+    const blob = new Blob([editedPdfBytes], { type: "application/pdf" });
+    editedPdfUrl = URL.createObjectURL(blob);
 
     previewStep.style.display = "block";
     editedPreview.src = editedPdfUrl;
+    fallbackLink.href = editedPdfUrl;
+    fallbackLink.style.display = "inline-block";
     downloadBtn.disabled = false;
-    status.textContent = "Photo added! Tap View PDF to review it, or Download PDF to save it.";
+
+    status.textContent =
+      "Photo added. You can view the edited PDF or download it.";
     previewStep.scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (error) {
-    status.textContent = error.message || "Could not add the image. Please try again.";
+    status.textContent =
+      error.message || "Could not add the photo. Please try again.";
   } finally {
     updateAddButton();
   }
 });
 
 viewBtn.addEventListener("click", () => {
-  if (!editedPdfUrl) {
-    status.textContent = "First tap Add Photo to PDF.";
+  if (!editedPdfBytes) {
+    status.textContent = "First click Add Photo to PDF.";
     return;
   }
-  editedPreview.src = editedPdfUrl;
-  previewStep.style.display = "block";
-  status.textContent = "Your edited PDF is shown in the preview above.";
-  editedPreview.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  // Use the current URL so it remains valid for the preview and link.
+  if (!editedPdfUrl) {
+    editedPdfUrl = URL.createObjectURL(
+      new Blob([editedPdfBytes], { type: "application/pdf" })
+    );
+  }
+
+  fallbackLink.href = editedPdfUrl;
+  fallbackLink.style.display = "inline-block";
+
+  // Some browsers block new tabs or do not support embedded PDF previews.
+  const newTab = window.open(editedPdfUrl, "_blank");
+
+  if (newTab) {
+    status.textContent =
+      "The edited PDF was opened in a new tab. If it does not display, use the preview or download it.";
+  } else {
+    status.textContent =
+      "The browser blocked the new tab. Use the preview below or tap the open-PDF link.";
+    fallbackLink.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
 });
 
 downloadBtn.addEventListener("click", () => {
   if (!editedPdfBytes) {
-    status.textContent = "First tap Add Photo to PDF.";
+    status.textContent = "First click Add Photo to PDF.";
     return;
   }
 
   const blob = new Blob([editedPdfBytes], { type: "application/pdf" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
+
   link.href = url;
   link.download = "edited-document.pdf";
   document.body.appendChild(link);
   link.click();
   link.remove();
+
   setTimeout(() => URL.revokeObjectURL(url), 60000);
   status.textContent = "Download started. Check your Downloads folder.";
 });
@@ -294,4 +388,4 @@ downloadBtn.addEventListener("click", () => {
 
 path = Path("/mnt/data/index.html")
 path.write_text(html, encoding="utf-8")
-print(f"Created updated {path} ({path.stat().st_size:,} bytes)")
+print(f"Created complete corrected file: {path} ({path.stat().st_size:,} bytes)")
